@@ -1,14 +1,6 @@
-import json
 import os
-import fnmatch
-import cv2
 import easygui
-import imutils
-import numpy as np
-from decord import VideoReader
-from decord import cpu
-
-from utils import pairwise, extract_frames
+from utils import extract_frames
 
 
 def fs_video_to_frames(video_path, overwrite=False, width=300):

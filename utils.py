@@ -1,16 +1,27 @@
+import fnmatch
 import itertools
 import json
 import os
-import fnmatch
+import coloredlogs
 import cv2
 import imutils
+import logging
 import numpy as np
 from decord import VideoReader
 from decord import cpu
 
+# Check OS
+if os.name == 'nt':
+    import win32com.client as com
+    isWindows = True
+
+# Create and start logger object.
+logger = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG')
+
 
 def pairwise(iterable):
-    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    """s -> (s0,s1), (s1,s2), (s2, s3), ..."""
     a, b = itertools.tee(iterable)
     next(b, None)
     return zip(a, b)
@@ -40,7 +51,6 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300):
     vr = VideoReader(video_path, ctx=cpu(0))  # can set to cpu or gpu .. ctx=gpu(0)
 
     fpms = vr.get_avg_fps() / 1000  # frames per millisecond
-    print('Frames per ms: ' + str(fpms))
 
     # Load the funscript file
     with open(os.path.splitext(video_path)[0] + '.funscript') as f:
@@ -60,18 +70,16 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300):
     for x in formatted_points:
         os.makedirs(os.path.join(frames_dir, 'output', video_filename, str(x)), exist_ok=True)
 
-    # Step 3: Extract frames associated with the 'at' object keys from the funscript file.
+    # Step 3: Extract frames associated with the 'at' object keys from array.
 
-    # Remove 'duplicate' frames (when no movement is detected between two points)
-    print('Before: ' + str(len(actions)))
+    # Remove redundant actions (when no change happens between two points in the funscript file)
     for a, b in pairwise(actions):
         if a['pos'] == b['pos']:
-            actions.pop(actions.index(b))
-    print('After: ' + str(len(actions)))
+            actions.pop(actions.index(b))  # Drop the latter action, redundant.
 
-    for index in actions:  # loop through the funscript timestamps to the approximate frame of the video
+    for index in actions:  # loop through the funscript timestamps to the approx. frame of the video
         timestamp = (index['at'])
-        vr.seek(round(fpms * timestamp))
+        vr.seek(round(fpms * timestamp))  # Round decimal to approx. frame and go to it.
         frame = vr.next()  # read the image from capture
         image_count = len(
             fnmatch.filter(os.listdir(os.path.join(frames_dir, 'output', video_filename, str(index['pos']))),
@@ -83,11 +91,21 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300):
             cv2.imwrite(save_path, cv2.cvtColor(resized_image, cv2.COLOR_RGB2BGR))  # save the extracted image
             saved_count += 1  # increment our counter by one
 
-        # print(f'Status: ' + str(round((fpms * timestamp / len(vr) * 100), 2)) +
-        #       '%')
+        # Logging overall status
+        if actions.index(index) % 5 == 0:
+
+            if isWindows:  # If Windows, can log folder size as well.
+                fso = com.Dispatch('Scripting.FileSystemObject')
+                folder = fso.GetFolder(os.path.join(frames_dir, 'output', video_filename))
+                mb = 1024 * 1024.0
+                logger.debug(f'Funscript actions processed: ' + str(actions.index(index)) + ' of ' + str(
+                    len(actions)) + '. Folder size: ' + '%.2f MB' % (folder.Size / mb))
+            else:
+                logger.debug(f'Funscript actions processed: ' + str(actions.index(index)) + ' of ' + str(
+                    len(actions)) + '.')
 
         # Log at every 5%
         if round(actions.index(index) / len(actions) * 100, 2) % 5 == 0:
-            print(f'Status: ' + str(round(actions.index(index) / len(actions) * 100, 2)) + '%')
+            logger.debug(f'Status: ' + str(round(actions.index(index) / len(actions) * 100, 2)) + '%')
 
     return saved_count  # and return the count of the images we saved
