@@ -1,6 +1,7 @@
 import fnmatch
 import json
 import os
+import sys
 import coloredlogs
 import cv2
 import imutils
@@ -8,7 +9,6 @@ import logging
 import numpy as np
 from decord import VideoReader
 from decord import cpu
-from utils import pairwise
 
 # Check OS
 if os.name == 'nt':
@@ -31,17 +31,24 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300):
     :return: count of images saved
     """
 
-    saved_count = 0  # Initialize variable
+    saved_count = 0  # Initialize count variable
     video_path = os.path.normpath(video_path)  # get path of video
     frames_dir = os.path.normpath(frames_dir)  # get folder directory of video
 
     video_dir, video_filename = os.path.split(video_path)  # get the video path and filename from the path
 
     assert os.path.exists(video_path)  # assert the video file exists
-    assert os.path.exists(os.path.splitext(video_path)[0] + '.funscript')  # assert the associated funscript file exists
+    try:
+        assert os.path.exists(os.path.splitext(video_path)[0] + '.funscript')  # assert the associated
+        logger.debug('Successfully found matching funscript file.')
+        # funscript file exists
+    except AssertionError:
+        logger.error('Funscript file not found. Please make sure the funscript file'
+                     ' has the same name and is in the same place as the video.')
+        sys.exit(1)
 
-    # load the VideoReader
-    # Note: GPU encoding requires decord to be built from source. See github readme.
+    # Load the VideoReader
+    # note: GPU decoding requires decord to be built from source. Uses NVIDIA codes. See github readme.
     vr = VideoReader(video_path, ctx=cpu(0))  # can set to cpu or gpu .. ctx=gpu(0)
 
     fpms = vr.get_avg_fps() / 1000  # frames per millisecond
@@ -50,37 +57,41 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300):
     with open(os.path.splitext(video_path)[0] + '.funscript') as f:
         data = json.load(f)
 
-    actions = data['actions']  # Point to the array we require from the JSON array
+    actions = data['actions']  # point to the array we require from the funscript JSON array
 
     # Step 2: Create folders associated with the 'pos' position
 
-    # Initialize empty array targeting the 'pos' object keys from array
-    formatted_points = []
+    formatted_points = []  # initialize empty array targeting the 'pos' object key from array
     for x in actions:
         formatted_points.append(x['pos'])
 
-    formatted_points = np.unique(formatted_points)  # Strip array to unique points for folder creation
+    formatted_points = np.unique(formatted_points)  # strip array to unique points for folder creation
 
     for x in formatted_points:
-        os.makedirs(os.path.join(frames_dir, 'output', video_filename, str(x)), exist_ok=True)
+        os.makedirs(os.path.join(frames_dir, 'output', video_filename, str(x)), exist_ok=True)  # create folders for
+        # each unique 'pos'.
 
-    # Step 3: Extract frames associated with the 'at' object keys from array.
+    # Step 3: Extract frames associated with 'at' object key from array.
 
     # Remove redundant actions (when no change happens between two points in the funscript file)
-    total_actions = len(actions)
-    for a, b in pairwise(actions):
-        if a['pos'] == b['pos']:
-            actions.pop(actions.index(b))  # Drop the latter action, redundant.
-    logger.debug(f'' + str(total_actions) + ' actions found in funscript file of which '
-                 + str(len(actions)) + ' are unique. (' + str(round(len(actions) / total_actions * 100, 2)) + '%)')
+    total_actions = len(actions)  # initialize variable to store total actions prior to dropping for logging purposes.
 
-    for index in actions:  # loop through the funscript timestamps to the approx. frame of the video
+    unique_actions = [actions[0]]  # for-loop responsible for finding redundant actions.
+    for index in range(1, len(actions)):
+        if actions[index]['pos'] == unique_actions[-1]['pos']:
+            continue
+        unique_actions.append(actions[index])
+
+    logger.debug(f'' + str(total_actions) + ' actions found in the funscript file of which '
+                 + str(len(unique_actions)) + ' are unique. (' + str(round(len(unique_actions) / total_actions * 100, 2)) + '%)')
+
+    for index in unique_actions:  # loop through the funscript timestamps to the approx. frame of the video
         timestamp = (index['at'])
-        vr.seek(round(fpms * timestamp))  # Round decimal to approx. frame and go to it.
+        vr.seek(round(fpms * timestamp))  # round decimal to approx. frame and go to it.
         frame = vr.next()  # read the image from capture
         image_count = len(
             fnmatch.filter(os.listdir(os.path.join(frames_dir, 'output', video_filename, str(index['pos']))),
-                           '*.jpg'))  # Get total files in folder and add 1 to the next image saved.
+                           '*.jpg'))  # get total files in relevant folder and add 1 to the next image saved.
         save_path = os.path.join(frames_dir, 'output', video_filename, str(index['pos']),
                                  "{:01d}.jpg".format(image_count + 1))  # create the save path
         if not os.path.exists(save_path) or overwrite:  # if it doesn't exist or we want to overwrite anyways
@@ -91,7 +102,7 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300):
         # Logging overall status
         if actions.index(index) % 5 == 0:
 
-            if isWindows:  # If Windows, can log folder size as well.
+            if isWindows:  # if Windows, can log folder size as well.
                 fso = com.Dispatch('Scripting.FileSystemObject')
                 folder = fso.GetFolder(os.path.join(frames_dir, 'output', video_filename))
                 mb = 1024 * 1024.0
@@ -105,4 +116,5 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300):
         if round(actions.index(index) / len(actions) * 100, 2) % 5 == 0:
             logger.debug(f'Status: ' + str(round(actions.index(index) / len(actions) * 100, 2)) + '%')
 
+    logger.debug(f'Finished successfully. ' + str(saved_count) + ' images saved.')
     return saved_count  # and return the count of the images we saved
