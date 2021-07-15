@@ -1,12 +1,13 @@
 import os
 import easygui
-from utils import extract_frames
+
+from extract_frames import extract_frames
 
 
-def fs_video_to_frames(video_path, overwrite=False, width=300):
+def fs_video_to_frames(video_path, overwrite=False, width=600):
     """
     Extracts the frames from an associated funscript video
-    :param width: width of the extracted frames saved
+    :param width: Final width of the extracted frames saved.
     :param video_path: path to the video
     :param overwrite: overwrite frames if they exist?
     :return: path to the directory where the frames were saved, or None if fails
