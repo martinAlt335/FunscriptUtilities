@@ -21,9 +21,10 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG')
 
 
-def extract_frames(video_path, frames_dir, overwrite=False, width=300):
+def extract_frames(video_path, frames_dir, overwrite=False, width=300, bulk_mode=False):
     """
     Extract specified frames from a funscript video using decord's VideoReader
+    :param bulk_mode: Process multiple videos at one time, user can select multiple files from GUI.
     :param width: width of the extracted frames saved
     :param video_path: path of the video
     :param frames_dir: the directory to save the frames
@@ -35,7 +36,10 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300):
     video_path = os.path.normpath(video_path)  # get path of video
     frames_dir = os.path.normpath(frames_dir)  # get folder directory of video
 
-    video_dir, video_filename = os.path.split(video_path)  # get the video path and filename from the path
+    if bulk_mode:
+        video_filename = str('bulk')
+    else:
+        video_dir, video_filename = os.path.split(video_path)
 
     assert os.path.exists(video_path)  # assert the video file exists
     try:
@@ -48,7 +52,7 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300):
         sys.exit(1)
 
     # Load the VideoReader
-    # note: GPU decoding requires decord to be built from source. Uses NVIDIA codes. See github readme.
+    # note: GPU decoding requires decord to be built from source. Uses NVIDIA codecs. See github readme.
     vr = VideoReader(video_path, ctx=cpu(0))  # can set to cpu or gpu .. ctx=gpu(0)
 
     fpms = vr.get_avg_fps() / 1000  # frames per millisecond
@@ -74,7 +78,8 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300):
     # Step 3: Extract frames associated with 'at' object key from array.
 
     # Remove redundant actions (when no change happens between two points in the funscript file)
-    total_actions = len(actions)  # initialize variable to store total actions prior to dropping for logging purposes.
+    total_actions = len(
+        actions)  # initialize variable to store total actions prior to dropping for logging purposes.
 
     unique_actions = [actions[0]]  # for-loop responsible for finding redundant actions.
     for index in range(1, len(actions)):
@@ -83,7 +88,8 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300):
         unique_actions.append(actions[index])
 
     logger.debug(f'' + str(total_actions) + ' actions found in the funscript file of which '
-                 + str(len(unique_actions)) + ' are unique. (' + str(round(len(unique_actions) / total_actions * 100, 2)) + '%)')
+                 + str(len(unique_actions)) + ' are unique. (' + str(
+        round(len(unique_actions) / total_actions * 100, 2)) + '%)')
 
     for index in unique_actions:  # loop through the funscript timestamps to the approx. frame of the video
         timestamp = (index['at'])
