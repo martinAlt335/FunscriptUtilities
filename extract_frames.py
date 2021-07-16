@@ -23,7 +23,7 @@ coloredlogs.install(level='DEBUG')
 
 def extract_frames(video_path, frames_dir, overwrite=False, width=300, bulk_mode=False):
     """
-    Extract specified frames from a funscript video using decord's VideoReader
+    Extract frames from an associated funscript video using decord's VideoReader
     :param bulk_mode: Process multiple videos at one time, user can select multiple files from GUI.
     :param width: width of the extracted frames saved
     :param video_path: path of the video
@@ -32,7 +32,7 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300, bulk_mode
     :return: count of images saved
     """
 
-    saved_count = 0  # Initialize count variable
+    saved_count = 0  # initialize count variable
     video_path = os.path.normpath(video_path)  # get path of video
     frames_dir = os.path.normpath(frames_dir)  # get folder directory of video
 
@@ -52,8 +52,14 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300, bulk_mode
         sys.exit(1)
 
     # Load the VideoReader
-    # note: GPU decoding requires decord to be built from source. Uses NVIDIA codecs. See github readme.
-    vr = VideoReader(video_path, ctx=cpu(0))  # can set to cpu or gpu .. ctx=gpu(0)
+    # note: GPU decoding requires decord to be built from source. Uses NVIDIA codecs.
+    # See https://github.com/dmlc/decord#install-via-pip. NVIDIA GPUs only.
+    decoder = cpu(0)  # can set to cpu or gpu .. decoder = gpu(0)
+    vr = VideoReader(video_path, ctx=decoder)
+
+    if str(decoder) == 'cpu(0)':
+        logger.warning('GPU processing disabled. To use your GPU for faster processing visit:'
+                    ' https://github.com/dmlc/decord#install-via-pip. NVIDIA GPUs only.')
 
     fpms = vr.get_avg_fps() / 1000  # frames per millisecond
 
@@ -118,8 +124,8 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300, bulk_mode
                 logger.debug(f'Actions processed: ' + str(actions.index(index)) + ' of ' + str(
                     len(actions)) + '.')
 
-        # Log at every 5%
-        if round(actions.index(index) / len(actions) * 100, 2) % 5 == 0:
+        # Log at every 5%.
+        if actions.index(index) > 0 and round(actions.index(index) / len(actions) * 100, 2) % 5 == 0:
             logger.debug(f'Status: ' + str(round(actions.index(index) / len(actions) * 100, 2)) + '%')
 
     logger.debug(f'Finished successfully. ' + str(saved_count) + ' images saved.')

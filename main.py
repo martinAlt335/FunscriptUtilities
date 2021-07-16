@@ -22,13 +22,14 @@ def fs_video_to_frames(video_path, overwrite=False, width=600, bulk_mode=False):
     """
 
     for video in video_path:
-        video_path = os.path.normpath(video)  # make the paths OS (Windows) compatible
-        frames_dir = os.path.dirname(video_path)  # make the paths OS (Windows) compatible
+        video_path = os.path.normpath(video)  # normalise video path
+        frames_dir = os.path.dirname(video_path)  # get directory path of video
 
         video_dir, video_filename = os.path.split(video_path)  # get the video path and filename from the path
 
         # make directory to save frames, its a sub dir in the frames_dir with the video name
-        # In bulk mode, a single change is made: that is we save to output/bulk instead of output/'video_filename'
+        # In bulk mode, a single change is made: that is the save path becomes
+        # output/bulk instead of output/'video_filename'
         if bulk_mode:
             os.makedirs(os.path.join(frames_dir, 'output', 'bulk'), exist_ok=True)
         else:
