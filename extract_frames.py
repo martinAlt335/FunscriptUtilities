@@ -21,9 +21,12 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG')
 
 
-def extract_frames(video_path, frames_dir, overwrite=False, width=300, bulk_mode=False):
+def extract_frames(video_path, frames_dir, width=600, remove_duplicates=True, overwrite=False, bulk_mode=False):
     """
     Extract frames from an associated funscript video using decord's VideoReader
+    :param remove_duplicates: Useful when building Machine Learning databases where having more frames
+    covering same points are helpful in building the network. If true, actions that are next to each
+    other that are the same will be removed.
     :param bulk_mode: Process multiple videos at one time, user can select multiple files from GUI.
     :param width: width of the extracted frames saved
     :param video_path: path of the video
@@ -59,7 +62,7 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300, bulk_mode
 
     if str(decoder) == 'cpu(0)':
         logger.warning('GPU processing disabled. To use your GPU for faster processing visit:'
-                    ' https://github.com/dmlc/decord#install-via-pip. NVIDIA GPUs only.')
+                       ' https://github.com/dmlc/decord#install-via-pip. NVIDIA GPUs only.')
 
     fpms = vr.get_avg_fps() / 1000  # frames per millisecond
 
@@ -83,19 +86,25 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300, bulk_mode
 
     # Step 3: Extract frames associated with 'at' object key from array.
 
-    # Remove redundant actions (when no change happens between two points in the funscript file)
     total_actions = len(
         actions)  # initialize variable to store total actions prior to dropping for logging purposes.
 
-    unique_actions = [actions[0]]  # for-loop responsible for finding redundant actions.
-    for index in range(1, len(actions)):
-        if actions[index]['pos'] == unique_actions[-1]['pos']:
-            continue
-        unique_actions.append(actions[index])
+    # Remove redundant actions (when no change happens between two points in the funscript file)
+    # If remove_duplicates is false, bypass.
 
-    logger.debug(f'' + str(total_actions) + ' actions found in the funscript file of which '
-                 + str(len(unique_actions)) + ' are unique. (' + str(
-        round(len(unique_actions) / total_actions * 100, 2)) + '%)')
+    if remove_duplicates:
+        unique_actions = [actions[0]]  # for-loop responsible for finding redundant actions.
+        for index in range(1, len(actions)):
+            if actions[index]['pos'] == unique_actions[-1]['pos']:
+                continue
+            unique_actions.append(actions[index])
+        logger.debug(f'' + str(total_actions) + ' actions found in the funscript file of which '
+                     + str(len(unique_actions)) + ' are unique. (' + str(
+            round(len(unique_actions) / total_actions * 100, 2)) + '%)')
+    else:
+        unique_actions = actions
+        logger.warning(f'' + str(total_actions) + ' actions found in the funscript file. You are running in keep '
+                                                'duplicates mode.')
 
     for index in unique_actions:  # loop through the funscript timestamps to the approx. frame of the video
         timestamp = (index['at'])
@@ -119,14 +128,14 @@ def extract_frames(video_path, frames_dir, overwrite=False, width=300, bulk_mode
                 folder = fso.GetFolder(os.path.join(frames_dir, 'output', video_filename))
                 mb = 1024 * 1024.0
                 logger.debug(f'Actions processed: ' + str(actions.index(index)) + ' of ' + str(
-                    len(actions)) + '. Folder size: ' + '%.2f MB' % (folder.Size / mb))
+                    len(unique_actions)) + '. Folder size: ' + '%.2f MB' % (folder.Size / mb))
             else:
                 logger.debug(f'Actions processed: ' + str(actions.index(index)) + ' of ' + str(
-                    len(actions)) + '.')
+                    len(unique_actions)) + '.')
 
         # Log at every 5%.
-        if actions.index(index) > 0 and round(actions.index(index) / len(actions) * 100, 2) % 5 == 0:
-            logger.debug(f'Status: ' + str(round(actions.index(index) / len(actions) * 100, 2)) + '%')
+        if actions.index(index) > 0 and round(actions.index(index) / len(unique_actions) * 100, 2) % 5 == 0:
+            logger.debug(f'Status: ' + str(round(actions.index(index) / len(unique_actions) * 100, 2)) + '%')
 
     logger.debug(f'Finished successfully. ' + str(saved_count) + ' images saved.')
     return saved_count  # and return the count of the images we saved
