@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG')
 
 
-def extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, bulk_mode):
+def extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, force_save, bulk_mode):
     """
     Extract frames from an associated funscript video using decord's VideoReader
     :param remove_duplicates: Useful when building Machine Learning databases where having more frames
@@ -122,7 +122,7 @@ def extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, 
 
         if not os.path.exists(save_path) or overwrite:  # if it doesn't exist or we want to overwrite anyways
             resized_image = imutils.resize(frame.asnumpy(), width)
-            if not is_video_vr:  # if video is 2D
+            if force_save or not is_video_vr:  # if video is 2D or user wants to save the whole VR image anyways
                 cv2.imwrite(save_path, cv2.cvtColor(resized_image, cv2.COLOR_RGB2BGR))  # save the extracted image
             else:
                 height, width = resized_image.shape[:2]

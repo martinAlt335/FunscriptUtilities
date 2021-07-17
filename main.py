@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG')
 
 
-def fs_video_to_frames(video_path, width, remove_duplicates, overwrite, bulk_mode):
+def fs_video_to_frames(video_path, width, remove_duplicates, overwrite, force_save, bulk_mode):
     """
     Extracts the frames from an associated funscript video
     :param remove_duplicates: Useful when building Machine Learning databases where having more frames
@@ -41,7 +41,7 @@ def fs_video_to_frames(video_path, width, remove_duplicates, overwrite, bulk_mod
 
         logger.debug('Processing video: {}'.format(video_filename))
 
-        extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, bulk_mode)
+        extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, force_save, bulk_mode)
         # let's now extract the frames
 
 
@@ -51,15 +51,17 @@ if __name__ == '__main__':
     width = 1200  # saved image width pixels
     remove_duplicates = False  # should duplicates be removed? See readme, for standard use case: true.
     overwrite = False  # should overwrite existing files? currently not adapted fully.
+    force_save = False  # if one wants to save the whole VR image, if VR video is detected it is split in half,
+    # this is a bypass.
     # Todo: Fix overwrite function.
 
     video_path = easygui.fileopenbox(multiple=True)
 
     try:
         if len(video_path) > 1:
-            fs_video_to_frames(video_path, width, remove_duplicates, overwrite, bulk_mode=True)
+            fs_video_to_frames(video_path, width, remove_duplicates, overwrite, force_save, bulk_mode=True)
         else:
-            fs_video_to_frames(video_path, width, remove_duplicates, overwrite, bulk_mode=False)
+            fs_video_to_frames(video_path, width, remove_duplicates, overwrite, force_save, bulk_mode=False)
     except TypeError:
         logger.error('No video file selected, exiting.')
         sys.exit(1)

@@ -27,9 +27,9 @@ def video_type(video):
 
     os.makedirs(os.path.join('temp'), exist_ok=True)  # create temp folder
 
-    cv2.imwrite('temp/snapshot.JPG', cv2.cvtColor(frame.asnumpy(), cv2.COLOR_RGB2BGR))  # save image
+    cv2.imwrite(os.path.normpath('temp/snapshot.JPG'), cv2.cvtColor(frame.asnumpy(), cv2.COLOR_RGB2BGR))  # save image
 
-    img = cv2.imread('temp/snapshot.JPG')  # read image
+    img = cv2.imread(os.path.normpath('temp/snapshot.JPG'))  # read image
     height, width = img.shape[:2]
 
     # Cut the image in half
@@ -38,14 +38,14 @@ def video_type(video):
     s2 = img[:, width_cutoff:]
 
     # Save each half
-    cv2.imwrite('temp/split_1.JPG', cv2.cvtColor(s1, cv2.COLOR_RGB2BGR))
-    cv2.imwrite('temp/split_2.JPG', cv2.cvtColor(s2, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(os.path.normpath('temp/split_1.JPG'), cv2.cvtColor(s1, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(os.path.normpath('temp/split_2.JPG'), cv2.cvtColor(s2, cv2.COLOR_RGB2BGR))
 
     # Test if identical
-    list_1 = [os.stat('temp/split_1.JPG').st_size, os.stat('temp/split_2.JPG').st_size]  # push both numbers to array
+    list_1 = [os.stat(os.path.normpath('temp/split_1.JPG')).st_size, os.stat(os.path.normpath('temp/split_2.JPG')).st_size]  # push both numbers to array
     list_1.sort()  # sort ascending for maths later on
 
-    shutil.rmtree('./temp')  # delete temp folder
+    shutil.rmtree(os.path.normpath('./temp'))  # delete temp folder
 
     if not list_1[0] / list_1[1] * 100 <= 92:  # if file size between two
         # JPGs differs more than 8% it is likely to be a 2D video.
