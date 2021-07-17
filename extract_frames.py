@@ -109,6 +109,9 @@ def extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, 
                                                   'duplicates mode.')
 
     is_video_vr = video_type(video)  # save boolean result from function
+    # TODO: Possibly bypass function call all together if force_save is true. Issue:
+    # from the way I see it, means adding more if statements, maybe better to keep it as-is for the sake
+    # of code-legibility unless another way still delivers while being minimal.
 
     for index in unique_actions:  # loop through the funscript timestamps to the approx. frame of the video
         timestamp = (index['at'])

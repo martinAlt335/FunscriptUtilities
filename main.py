@@ -55,6 +55,12 @@ if __name__ == '__main__':
     # this is a bypass.
     # Todo: Fix overwrite function.
 
+    logger.debug('\n Current configuration: \n'
+                 '  Exported image width: ' + str(width) + 'px.'
+                 '\n  Remove duplicates: ' + str(remove_duplicates) +
+                 '\n  Overwrite existing: ' + str(overwrite) + ' (not yet fully implemented).'
+                 '\n  Save whole VR image: ' + str(force_save))
+
     video_path = easygui.fileopenbox(multiple=True)
 
     try:
