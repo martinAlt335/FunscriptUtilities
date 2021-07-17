@@ -1,6 +1,13 @@
 import os
 import shutil
 import cv2
+import coloredlogs
+import logging
+
+
+# Create and start logger object.
+logger = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG')
 
 
 def is_vr_video(video):
@@ -42,9 +49,9 @@ def is_vr_video(video):
 
     if not list_1[0] / list_1[1] * 100 <= 92:  # if file size between two
         # JPGs differs more than 8% it is likely to be a 2D video.
-        print('VR Video detected. Score: ' + str(round(list_1[0] / list_1[1] * 100, 2)) + '%.')
+        logger.debug('VR Video detected. Score: ' + str(round(list_1[0] / list_1[1] * 100, 2)) + '%.')
         return True
     else:
-        print('2D Video detected. Score: ' + str(round(list_1[0] / list_1[1] * 100, 2)) + '%.')
+        logger.debug('2D Video detected. Score: ' + str(round(list_1[0] / list_1[1] * 100, 2)) + '%.')
         return False
 

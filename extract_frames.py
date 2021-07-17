@@ -11,7 +11,7 @@ from decord import VideoReader
 from decord import cpu
 
 # Check OS
-from image_split import is_vr_video
+from utils import is_vr_video
 
 if os.name == 'nt':
     import win32com.client as com
