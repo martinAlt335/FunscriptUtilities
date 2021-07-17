@@ -11,7 +11,7 @@ from decord import VideoReader
 from decord import cpu
 
 # Check OS
-from utils import is_vr_video
+from utils import video_type
 
 if os.name == 'nt':
     import win32com.client as com
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG')
 
 
-def extract_frames(video_path, frames_dir, width=600, remove_duplicates=True, overwrite=False, bulk_mode=False):
+def extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, bulk_mode):
     """
     Extract frames from an associated funscript video using decord's VideoReader
     :param remove_duplicates: Useful when building Machine Learning databases where having more frames
@@ -60,15 +60,13 @@ def extract_frames(video_path, frames_dir, width=600, remove_duplicates=True, ov
     # note: GPU decoding requires decord to be built from source. Uses NVIDIA codecs.
     # See https://github.com/dmlc/decord#install-via-pip. NVIDIA GPUs only.
     decoder = cpu(0)  # can set to cpu or gpu .. decoder = gpu(0)
-    vr = VideoReader(video_path, ctx=decoder)
+    video = VideoReader(video_path, ctx=decoder)
 
-    if str(decoder) == 'cpu(0)':
+    if str(decoder).split('(', 1)[0] == 'cpu':
         logger.warning('GPU processing disabled. To use your GPU for faster processing visit:'
                        ' https://github.com/dmlc/decord#install-via-pip. NVIDIA GPUs only.')
 
-    fpms = vr.get_avg_fps() / 1000  # frames per millisecond
-
-    is_vr_video(vr)  # test if video is VR or 2D
+    fpms = video.get_avg_fps() / 1000  # frames per millisecond
 
     # Load the funscript file
     with open(os.path.splitext(video_path)[0] + '.funscript') as f:
@@ -88,7 +86,7 @@ def extract_frames(video_path, frames_dir, width=600, remove_duplicates=True, ov
         os.makedirs(os.path.join(frames_dir, 'output', video_filename, str(x)), exist_ok=True)  # create folders for
         # each unique 'pos'.
 
-    # Step 3: Extract frames associated with 'at' object key from array.
+    # Step 3: Extract frames associated with the 'at' object key from array.
 
     total_actions = len(
         actions)  # initialize variable to store total actions prior to dropping for logging purposes.
@@ -108,25 +106,34 @@ def extract_frames(video_path, frames_dir, width=600, remove_duplicates=True, ov
     else:
         unique_actions = actions
         logger.warning(f'' + str(total_actions) + ' actions found in the funscript file. You are running in keep '
-                                                'duplicates mode.')
+                                                  'duplicates mode.')
+
+    is_video_vr = video_type(video)  # save boolean result from function
 
     for index in unique_actions:  # loop through the funscript timestamps to the approx. frame of the video
         timestamp = (index['at'])
-        vr.seek(round(fpms * timestamp))  # round decimal to approx. frame and go to it.
-        frame = vr.next()  # read the image from capture
+        video.seek(round(fpms * timestamp))  # round decimal to approx. frame and go to it.
+        frame = video.next()  # read the image from capture
         image_count = len(
             fnmatch.filter(os.listdir(os.path.join(frames_dir, 'output', video_filename, str(index['pos']))),
                            '*.jpg'))  # get total files in relevant folder and add 1 to the next image saved.
         save_path = os.path.join(frames_dir, 'output', video_filename, str(index['pos']),
                                  "{:01d}.jpg".format(image_count + 1))  # create the save path
+
         if not os.path.exists(save_path) or overwrite:  # if it doesn't exist or we want to overwrite anyways
             resized_image = imutils.resize(frame.asnumpy(), width)
-            cv2.imwrite(save_path, cv2.cvtColor(resized_image, cv2.COLOR_RGB2BGR))  # save the extracted image
+            if not is_video_vr:  # if video is 2D
+                cv2.imwrite(save_path, cv2.cvtColor(resized_image, cv2.COLOR_RGB2BGR))  # save the extracted image
+            else:
+                height, width = resized_image.shape[:2]
+                # If VR, cut image vertically in-half and save first half.
+                width_cutoff = width // 2
+                s1 = resized_image[:, :width_cutoff]
+                cv2.imwrite(save_path, cv2.cvtColor(s1, cv2.COLOR_RGB2BGR))
             saved_count += 1  # increment our counter by one
 
         # Logging overall status
         if actions.index(index) % 5 == 0:
-
             if isWindows:  # if Windows, can log folder size as well.
                 fso = com.Dispatch('Scripting.FileSystemObject')
                 folder = fso.GetFolder(os.path.join(frames_dir, 'output', video_filename))

@@ -1,4 +1,5 @@
 import os
+import sys
 import easygui
 import coloredlogs
 import logging
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG')
 
 
-def fs_video_to_frames(video_path, width=600, remove_duplicates=True, overwrite=False, bulk_mode=False):
+def fs_video_to_frames(video_path, width, remove_duplicates, overwrite, bulk_mode):
     """
     Extracts the frames from an associated funscript video
     :param remove_duplicates: Useful when building Machine Learning databases where having more frames
@@ -38,7 +39,7 @@ def fs_video_to_frames(video_path, width=600, remove_duplicates=True, overwrite=
         else:
             os.makedirs(os.path.join(frames_dir, 'output', video_filename), exist_ok=True)
 
-        logger.info('Processing video: {}'.format(video_filename))
+        logger.debug('Processing video: {}'.format(video_filename))
 
         extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, bulk_mode)
         # let's now extract the frames
@@ -47,13 +48,18 @@ def fs_video_to_frames(video_path, width=600, remove_duplicates=True, overwrite=
 if __name__ == '__main__':
 
     # Configuration
-    width = 600  # saved image width pixels
+    width = 1200  # saved image width pixels
     remove_duplicates = False  # should duplicates be removed? See readme, for standard use case: true.
     overwrite = False  # should overwrite existing files? currently not adapted fully.
+    # Todo: Fix overwrite function.
 
     video_path = easygui.fileopenbox(multiple=True)
 
-    if len(video_path) > 1:
-        fs_video_to_frames(video_path, width, remove_duplicates, overwrite, bulk_mode=True)
-    else:
-        fs_video_to_frames(video_path, width, remove_duplicates, overwrite,)
+    try:
+        if len(video_path) > 1:
+            fs_video_to_frames(video_path, width, remove_duplicates, overwrite, bulk_mode=True)
+        else:
+            fs_video_to_frames(video_path, width, remove_duplicates, overwrite, bulk_mode=False)
+    except TypeError:
+        logger.error('No video file selected, exiting.')
+        sys.exit(1)

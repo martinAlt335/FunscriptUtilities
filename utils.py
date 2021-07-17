@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG')
 
 
-def is_vr_video(video):
+def video_type(video):
     """
     Quick comparative test to quickly and easily deduce whether a video being fed in is either VR or 2D.
     This is performed because VR videos are saved as two very similar images side-by-side for each eye,
     if a video is VR we can split it in half and save one-half only. Potentially useful when building
-    a ML dataset wherein having two identical images hinder learning quality.
+    a ML dataset wherein having two identical images in the same image hinder learning quality.
     :param video: video object passed in.
-    :return: boolean if VR or 2D video.
+    :return: true if VR or false if 2D video.
     """
 
     frames = len(video)  # total frames in video
@@ -42,16 +42,16 @@ def is_vr_video(video):
     cv2.imwrite('temp/split_2.JPG', cv2.cvtColor(s2, cv2.COLOR_RGB2BGR))
 
     # Test if identical
-    list_1 = [os.stat('temp/split_1.JPG').st_size, os.stat('temp/split_2.JPG').st_size]
-    list_1.sort()
+    list_1 = [os.stat('temp/split_1.JPG').st_size, os.stat('temp/split_2.JPG').st_size]  # push both numbers to array
+    list_1.sort()  # sort ascending for maths later on
 
     shutil.rmtree('./temp')  # delete temp folder
 
     if not list_1[0] / list_1[1] * 100 <= 92:  # if file size between two
         # JPGs differs more than 8% it is likely to be a 2D video.
-        logger.debug('VR Video detected. Score: ' + str(round(list_1[0] / list_1[1] * 100, 2)) + '%.')
+        logger.debug('VR video detected. Score: ' + str(round(list_1[0] / list_1[1] * 100, 2)) + '%.')
         return True
     else:
-        logger.debug('2D Video detected. Score: ' + str(round(list_1[0] / list_1[1] * 100, 2)) + '%.')
+        logger.debug('2D video detected. Score: ' + str(round(list_1[0] / list_1[1] * 100, 2)) + '%.')
         return False
 
