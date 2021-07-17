@@ -11,6 +11,8 @@ from decord import VideoReader
 from decord import cpu
 
 # Check OS
+from image_split import is_vr_video
+
 if os.name == 'nt':
     import win32com.client as com
 
@@ -65,6 +67,8 @@ def extract_frames(video_path, frames_dir, width=600, remove_duplicates=True, ov
                        ' https://github.com/dmlc/decord#install-via-pip. NVIDIA GPUs only.')
 
     fpms = vr.get_avg_fps() / 1000  # frames per millisecond
+
+    is_vr_video(vr)  # test if video is VR or 2D
 
     # Load the funscript file
     with open(os.path.splitext(video_path)[0] + '.funscript') as f:
