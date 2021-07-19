@@ -7,13 +7,15 @@ import logging
 from extract_frames import extract_frames
 
 # Create and start logger object.
+from extrapolate_frames import extrapolate_frames
+
 logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG')
 
 
-def fs_video_to_frames(video_path, width, remove_duplicates, overwrite, force_save, bulk_mode):
+def action_director(video_path, width, remove_duplicates, overwrite, force_save, action_select, bulk_mode):
     """
-    Extracts the frames from an associated funscript video
+    Routes the users requested action.
     :param remove_duplicates: Useful when building Machine Learning databases where having more frames
     covering same points are helpful in building the network. If true, actions that are next to each
     other that are the same will be removed.
@@ -41,8 +43,17 @@ def fs_video_to_frames(video_path, width, remove_duplicates, overwrite, force_sa
 
         logger.debug('Processing video: {}'.format(video_filename))
 
-        extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, force_save, bulk_mode)
-        # let's now extract the frames
+        if action_select == 'extract_frames':
+            logger.debug('\n Current configuration: \n'
+                         '  Exported image width: ' + str(width) + 'px'
+                                                                   '\n  Remove duplicates: ' + str(remove_duplicates) +
+                         '\n  Overwrite existing: ' + str(overwrite) + ' (not yet fully implemented)'
+                                                                       '\n  Save whole VR image: ' + str(force_save))
+            extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, force_save, bulk_mode)  # let's now extract the frames
+        else:
+            logger.debug('\n Current configuration: \n'
+                         '  Extrapolating frames. ')
+            extrapolate_frames(video_path)  # let's now extrapolate the frames
 
 
 if __name__ == '__main__':
@@ -54,20 +65,14 @@ if __name__ == '__main__':
     force_save = False  # if one wants to save the whole VR image, if VR video is detected it is split in half,
     # this is a bypass.
     # Todo: Fix overwrite function.
-
-    logger.debug('\n Current configuration: \n'
-                 '  Exported image width: ' + str(width) + 'px.'
-                 '\n  Remove duplicates: ' + str(remove_duplicates) +
-                 '\n  Overwrite existing: ' + str(overwrite) + ' (not yet fully implemented).'
-                 '\n  Save whole VR image: ' + str(force_save))
+    action_select = 'extrapolate_frames'  # 'extract_frames' or 'extrapolate_frames'
 
     video_path = easygui.fileopenbox(multiple=True)
 
-    try:
-        if len(video_path) > 1:
-            fs_video_to_frames(video_path, width, remove_duplicates, overwrite, force_save, bulk_mode=True)
-        else:
-            fs_video_to_frames(video_path, width, remove_duplicates, overwrite, force_save, bulk_mode=False)
-    except TypeError:
-        logger.error('No video file selected, exiting.')
-        sys.exit(1)
+    if len(video_path) > 1:
+        action_director(video_path, width, remove_duplicates, overwrite, force_save, action_select, bulk_mode=True)
+    else:
+        action_director(video_path, width, remove_duplicates, overwrite, force_save, action_select, bulk_mode=False)
+    # except TypeError:
+    #     logger.error('No video file selected, exiting.')
+    #     sys.exit(1)

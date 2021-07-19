@@ -3,6 +3,7 @@ import shutil
 import cv2
 import coloredlogs
 import logging
+import itertools
 
 
 # Create and start logger object.
@@ -54,4 +55,36 @@ def video_type(video):
     else:
         logger.debug('2D video detected. Score: ' + str(round(list_1[0] / list_1[1] * 100, 2)) + '%.')
         return False
+
+
+def pairwise(iterable):
+    """s -> (s0,s1), (s1,s2), (s2, s3), ..."""
+    a, b = itertools.tee(iterable)
+    next(b, None)
+    return zip(a, b)
+
+class StreamArray(list):
+    """
+    Converts a generator into a list object that can be json serialisable
+    while still retaining the iterative nature of a generator.
+
+    IE. It converts it to a list without having to exhaust the generator
+    and keep it's contents in memory.
+    """
+    def __init__(self, generator):
+        self.generator = generator
+        self._len = 1
+
+    def __iter__(self):
+        self._len = 0
+        for item in self.generator:
+            yield item
+            self._len += 1
+
+    def __len__(self):
+        """
+        Json parser looks for a this method to confirm whether or not it can
+        be parsed
+        """
+        return self._len
 
