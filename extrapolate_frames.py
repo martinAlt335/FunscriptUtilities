@@ -53,7 +53,7 @@ def extrapolate_frames(video_path):
 
     actions = data['actions']  # point to the array we require from the funscript JSON array
 
-    for a, b in pairwise(actions):
+    for a, b in pairwise(actions[:len(actions)]):
         distance = math.floor(((b['at'] - a['at']) * fpms))  # how many frames/points can fit between two,
         # round down to prevent overshoot.
         for i in range(1, distance + 1):
