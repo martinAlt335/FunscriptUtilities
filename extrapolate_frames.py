@@ -54,8 +54,9 @@ def extrapolate_frames(video_path):
     actions = data['actions']  # point to the array we require from the funscript JSON array
 
     for a, b in pairwise(actions[:len(actions)]):
-        distance = math.floor(((b['at'] - a['at']) * fpms))  # how many frames/points can fit between two,
+        distance = ((b['at'] - a['at']) * fpms)  # how many frames can fit between two points,
         # round down to prevent overshoot.
+        distance = math.floor(distance * (80/100))  # use 80% of the total frame gap.
         for i in range(1, distance + 1):
             formula = ((a['pos']) + i * ((b['pos'] - a['pos']) / (distance + 1)))  # formula for finding the 'pos' key
             # for the points we wish to fit in.
@@ -65,5 +66,24 @@ def extrapolate_frames(video_path):
     actions.sort(key=lambda x: x['at'])
 
     del data['actions']  # drop source funscript actions array
-    with open(video_dir + '/' + os.path.splitext(video_filename)[0] + '_extrapolated.funscript', 'w') as fp:
-        json.dump(({'actions': actions}, data), fp, indent=4)  # append new actions array to new JSON and export it.
+
+    # Write data to file.
+    # TODO: See if better way to JSON dump array and object. Having them together treats it as an array w/ two objects which
+    # is not what we are after. At the moment, a hacky workaround is in place.
+
+    with open(video_dir + '/' + os.path.splitext(video_filename)[0] + '_extrapolated.funscript', 'w') as fp:  # dump both separetly
+        # until a way to dump in the way we require.
+        json.dump(({'actions': actions}), fp, indent=4)  # append new actions array to new JSON and export it.
+        json.dump(data, fp, indent=4)  # append new actions array to new JSON and export it.
+    f.close()  # close open file
+    fp.close()  # close other open file
+
+    #  Manually find-replace.
+
+    with open(video_dir + '/' + os.path.splitext(video_filename)[0] + '_extrapolated.funscript') as f:
+        new_text = f.read().replace('}{', ',')
+    f.close()
+
+    with open(video_dir + '/' + os.path.splitext(video_filename)[0] + '_extrapolated.funscript', 'w') as f:
+        f.write(new_text)
+    f.close()
