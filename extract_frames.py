@@ -7,8 +7,8 @@ import cv2
 import imutils
 import logging
 import numpy as np
-from decord import VideoReader
-from decord import cpu
+import yaml
+from decord import VideoReader, cpu, gpu
 
 # Check OS
 from utils import video_type
@@ -37,6 +37,8 @@ def extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, 
     :return: count of images saved
     """
 
+    config = yaml.safe_load(open('settings.yml'))
+
     saved_count = 0  # initialize count variable
     video_path = os.path.normpath(video_path)  # get path of video
     frames_dir = os.path.normpath(frames_dir)  # get folder directory of video
@@ -59,12 +61,14 @@ def extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, 
     # Load the VideoReader
     # note: GPU decoding requires decord to be built from source. Uses NVIDIA codecs.
     # See https://github.com/dmlc/decord#install-via-pip. NVIDIA GPUs only.
-    decoder = cpu(0)  # can set to cpu or gpu .. decoder = gpu(0)
-    video = VideoReader(video_path, ctx=decoder)
-
-    if str(decoder).split('(', 1)[0] == 'cpu':
+    if config.get('VIDEO_DECODER') == 'cpu':
         logger.warning('GPU processing disabled. To use your GPU for faster processing visit:'
                        ' https://github.com/dmlc/decord#install-via-pip. NVIDIA GPUs only.')
+        decoder = cpu(0)  # can set to cpu or gpu .. decoder = gpu(0)
+    else:
+        decoder = gpu(0)
+
+    video = VideoReader(video_path, ctx=decoder)
 
     fpms = video.get_avg_fps() / 1000  # frames per millisecond
 

@@ -7,7 +7,7 @@ import logging
 import yaml
 
 # Create and start logger object.
-from decord import VideoReader, cpu
+from decord import VideoReader, cpu, gpu
 
 from utils import pairwise
 
@@ -40,13 +40,14 @@ def extrapolate_frames(video_path):
     # Load the VideoReader
     # note: GPU decoding requires decord to be built from source. Uses NVIDIA codecs.
     # See https://github.com/dmlc/decord#install-via-pip. NVIDIA GPUs only.
-    decoder = cpu(0)  # can set to cpu or gpu .. decoder = gpu(0)
-    video = VideoReader(video_path, ctx=decoder)
-
-    if str(decoder).split('(', 1)[0] == 'cpu':
+    if config.get('VIDEO_DECODER') == 'cpu':
         logger.warning('GPU processing disabled. To use your GPU for faster processing visit:'
                        ' https://github.com/dmlc/decord#install-via-pip. NVIDIA GPUs only.')
+        decoder = cpu(0)  # can set to cpu or gpu .. decoder = gpu(0)
+    else:
+        decoder = gpu(0)
 
+    video = VideoReader(video_path, ctx=decoder)
     fpms = video.get_avg_fps() / 1000  # frames per millisecond
 
     # Load the funscript file
@@ -94,4 +95,4 @@ def extrapolate_frames(video_path):
         f.write(new_text)
     f.close()
 
-    logger.debug('Extrapolated frames. (' + str(round((extrapolated_actions_count/source_actions_count * 100) - 100, 2)) + '% increase) Original funscript file had ' + str(source_actions_count) + ' actions. New count: ' + str(extrapolated_actions_count) + ' actions')
+    logger.debug('Extrapolated frames. (' + str(round((extrapolated_actions_count/source_actions_count * 100) - 100, 2)) + '% increase) Original funscript file had ' + str(source_actions_count) + ' actions. New count: ' + str(extrapolated_actions_count) + ' actions.')

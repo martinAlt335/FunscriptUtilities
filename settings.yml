@@ -1,7 +1,8 @@
 # Global config
 # Either 'extract_frames' or 'extrapolate_frames'.
 ACTION_SELECT: extrapolate_frames
-
+# Use CPU or GPU. GPU must be NVIDIA and follow this tutorial: https://github.com/dmlc/decord#install-via-pip. Default: cpu
+VIDEO_DECODER: cpu
 
 # Extract frames config
 # Saved image width in pixels. Default: 1200px
