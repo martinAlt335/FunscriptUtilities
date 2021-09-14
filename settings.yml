@@ -1,0 +1,20 @@
+# Either 'extract_frames' or 'extrapolate_frames'.
+ACTION_SELECT: extrapolate_frames
+
+
+# Extract frames config
+# Saved image width in pixels
+WIDTH: 1200
+# Should duplicates be removed? See readme, for standard use case: true.
+REMOVE_DUPLICATES: TRUE
+# Should overwrite images from prior runs? * Currently not working fully.
+OVERWRITE: FALSE
+# If VR video is detected the saved output is split in half, if you would like to save the image as is this is a bypass.
+FORCE_SAVE: TRUE
+
+
+# Extrapolate frames config
+# Note: For an average 30-45 min VR video there will be a few thousand actions. I found ranging between 1 to 10% very sufficient.
+# Eg: A video I tested that had ~8000 actions and the USE_PERCENTAGE at 20% became ~23000 actions.
+USE_PERCENTAGE: 5
+

@@ -1,0 +1,9 @@
+coloredlogs==15.0.1
+decord==0.6.0
+easygui==0.98.2
+humanfriendly==9.2
+imutils==0.5.4
+numpy==1.21.2
+opencv-python==4.5.3.56
+pyreadline==2.1
+pywin32==301

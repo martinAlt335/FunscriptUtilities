@@ -3,6 +3,7 @@ import sys
 import easygui
 import coloredlogs
 import logging
+import yaml
 
 from extract_frames import extract_frames
 
@@ -57,15 +58,13 @@ def action_director(video_path, width, remove_duplicates, overwrite, force_save,
 
 
 if __name__ == '__main__':
-
-    # Configuration
-    width = 1200  # saved image width pixels
-    remove_duplicates = False  # should duplicates be removed? See readme, for standard use case: true.
-    overwrite = False  # should overwrite existing files? currently not adapted fully.
-    force_save = False  # if one wants to save the whole VR image, if VR video is detected it is split in half,
-    # this is a bypass.
+    config = yaml.safe_load(open('settings.yml'))
+    width = config.get('WIDTH')
+    remove_duplicates = config.get('REMOVE_DUPLICATES')
     # Todo: Fix overwrite function.
-    action_select = 'extrapolate_frames'  # 'extract_frames' or 'extrapolate_frames'
+    overwrite = config.get('OVERWRITE')
+    force_save = config.get('FORCE_SAVE')
+    action_select = config.get('ACTION_SELECT')
 
     video_path = easygui.fileopenbox(multiple=True)
 

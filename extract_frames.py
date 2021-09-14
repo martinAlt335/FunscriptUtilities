@@ -77,6 +77,7 @@ def extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, 
     # Step 2: Create folders associated with the 'pos' position
 
     formatted_points = []  # initialize empty array targeting the 'pos' object key from array
+
     for x in actions:
         formatted_points.append(x['pos'])
 
@@ -96,6 +97,7 @@ def extract_frames(video_path, frames_dir, width, remove_duplicates, overwrite, 
 
     if remove_duplicates:
         unique_actions = [actions[0]]  # for-loop responsible for finding redundant actions.
+
         for index in range(1, len(actions)):
             if actions[index]['pos'] == unique_actions[-1]['pos']:
                 continue
