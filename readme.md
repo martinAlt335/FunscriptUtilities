@@ -11,6 +11,10 @@ pip install -r requirements.txt
 ```
 
 ## Usage
+Simply run main.py in the folder directory to start.
+```bash
+main.py
+```
 
 When the program is run, a file select prompt will appear, make sure the video's funscript file is in the same directory as the video, simply select the video you want to perform work on and voilla.
 
