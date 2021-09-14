@@ -1,15 +1,16 @@
+# Global config
 # Either 'extract_frames' or 'extrapolate_frames'.
 ACTION_SELECT: extrapolate_frames
 
 
 # Extract frames config
-# Saved image width in pixels
+# Saved image width in pixels. Default: 1200px
 WIDTH: 1200
-# Should duplicates be removed? See readme, for standard use case: true.
+# Drop redundant actions (when no change happens between two points in the funscript file). Default: true
 REMOVE_DUPLICATES: TRUE
-# Should overwrite images from prior runs? * Currently not working fully.
+# Should overwrite images from prior runs? * Currently not working fully. Default: FALSE
 OVERWRITE: FALSE
-# If VR video is detected the saved output is split in half, if you would like to save the image as is this is a bypass.
+# If VR video is detected the saved output is split in half, if you would like to save the image as is this is a bypass. Default: TRUE
 FORCE_SAVE: TRUE
 
 
